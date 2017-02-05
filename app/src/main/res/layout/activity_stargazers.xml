@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="37dp"
+        android:layout_marginTop="6dp"
+        android:orientation="horizontal"
+        android:weightSum="2" >
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="24dp"
+            android:layout_weight="@integer/config_first"
+            android:singleLine="true"
+            android:text="@string/nickname"
+            android:textSize="17sp" />
+        <EditText
+            android:id="@+id/nickname"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="@integer/config_second"
+            android:singleLine="true"
+            android:layout_marginRight="24dp"
+            android:hint="@string/nickname_hint"
+            android:textSize="17sp" />
+    </LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="37dp"
+        android:layout_marginTop="6dp"
+        android:orientation="horizontal"
+        android:weightSum="2" >
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="24dp"
+            android:layout_weight="@integer/config_first"
+            android:singleLine="true"
+            android:text="@string/repository"
+            android:textSize="17sp" />
+        <EditText
+            android:id="@+id/repository"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="@integer/config_second"
+            android:singleLine="true"
+            android:layout_marginRight="24dp"
+            android:hint="@string/repository"
+            android:textSize="17sp" />
+    </LinearLayout>
+
+    <com.dinuscxj.refresh.RecyclerRefreshLayout
+        android:id="@+id/refresh_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="6dp">
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/recycler_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+    </com.dinuscxj.refresh.RecyclerRefreshLayout>
+</LinearLayout>

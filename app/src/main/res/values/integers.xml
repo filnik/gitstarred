@@ -1,0 +1,4 @@
+<resources>
+    <item type="integer" name="config_first">0.8</item>
+    <item type="integer" name="config_second">1.2</item>
+</resources>

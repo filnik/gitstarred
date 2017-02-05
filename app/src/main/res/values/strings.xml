@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Stargazers</string>
+    <string name="refresh">Refresh</string>
+    <string name="nickname">Nickname</string>
+    <string name="nickname_hint">User</string>
+    <string name="repository">Repository</string>
+    <string name="download_done">Download done</string>
+    <string name="avatar">User avatar</string>
+</resources>
