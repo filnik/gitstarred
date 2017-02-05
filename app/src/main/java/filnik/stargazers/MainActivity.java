@@ -37,6 +37,7 @@ import filnik.stargazers.model.DataInterface;
 import filnik.stargazers.model.Model;
 import filnik.stargazers.view.DividerItemDecoration;
 import retrofit2.Retrofit;
+import retrofit2.adapter.rxjava.HttpException;
 import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
 import retrofit2.converter.gson.GsonConverterFactory;
 import rx.Observable;
@@ -235,7 +236,11 @@ public class MainActivity extends Activity {
 
                @Override
                public void onError(Throwable e) {
-                   Toast.makeText(MainActivity.this, R.string.error_downloading, Toast.LENGTH_SHORT).show();
+                   if (e instanceof HttpException && ((HttpException) e).code() == 404){
+                       Toast.makeText(MainActivity.this, R.string.missing_nickname_or_repository, Toast.LENGTH_SHORT).show();
+                   } else {
+                       Toast.makeText(MainActivity.this, R.string.error_downloading, Toast.LENGTH_SHORT).show();
+                   }
                    e.printStackTrace();
                    refreshLayout.setRefreshing(false);
                    setBusy(false);

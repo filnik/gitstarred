@@ -10,4 +10,5 @@
     <string name="go">GO</string>
     <string name="nickname_empty">Nickname given is not valid</string>
     <string name="repository_empty">Repository given is not valid</string>
+    <string name="missing_nickname_or_repository">Nickname or repository are misspelled..</string>
 </resources>
