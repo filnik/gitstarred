@@ -1,28 +1,30 @@
 package filnik.stargazers;
 
 import android.app.Activity;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.ImageView;
+import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.dinuscxj.refresh.RecyclerRefreshLayout;
-import com.koushikdutta.ion.Ion;
+import com.mobsandgeeks.saripaar.Validator;
 
 import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import filnik.stargazers.model.User;
+import filnik.stargazers.model.adapter.UsersAdapter;
 import io.realm.Realm;
 import io.realm.RealmConfiguration;
 import io.realm.RealmResults;
@@ -40,13 +42,19 @@ import rx.schedulers.Schedulers;
 public class MainActivity extends Activity {
     @BindView(R.id.nickname) TextView nickname;
     @BindView(R.id.repository) TextView repository;
+    @BindView(R.id.download_button) Button downloadButton;
     @BindView(R.id.refresh_layout) RecyclerRefreshLayout refreshLayout;
+    @BindView(R.id.idLayContent) LinearLayout layContent;
+    @BindView(R.id.idBusy) RelativeLayout busyId;
 
     private static final String TAG = "stargazers";
     private UsersAdapter usersAdapter;
     Retrofit retrofit;
     private Realm realm;
-    private RealmResults<User> postsDownloaded;
+    private RealmResults<User> usersDownloaded;
+    private SharedPreferences settings;
+
+    protected Validator validator = new Validator(this);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,17 +68,15 @@ public class MainActivity extends Activity {
                 .baseUrl(Model.GITHUB_REPO_URL)
                 .build();
 
-        refreshLayout.setOnRefreshListener(new RecyclerRefreshLayout.OnRefreshListener() {
-            @Override
-            public void onRefresh() {
-                downloadData();
-            }
-        });
+        setupRealm();
+        bindView();
 
-        RecyclerView recycleView = (RecyclerView) findViewById(R.id.recycler_view);
-        recycleView.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL_LIST));
-        usersAdapter = new UsersAdapter();
+        if (usersDownloaded == null) {
+            downloadData();
+        }
+    }
 
+    private void setupRealm(){
         Realm.init(this);
         RealmConfiguration config = new RealmConfiguration
                 .Builder()
@@ -78,15 +84,51 @@ public class MainActivity extends Activity {
                 .build();
         realm = Realm.getInstance(config);
         if (realm.where(User.class).count() > 0){
-            postsDownloaded = realm.where(User.class).findAll();
+            usersDownloaded = realm.where(User.class).findAll();
             Log.d(TAG, "Using cached data...");
         }
+    }
+
+    private void bindView(){
+        usersAdapter = new UsersAdapter(getApplicationContext(), usersDownloaded);
+        refreshLayout.setOnRefreshListener(new RecyclerRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                downloadData();
+            }
+        });
+
+        downloadButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                downloadData();
+            }
+        });
+
+        RecyclerView recycleView = (RecyclerView) findViewById(R.id.recycler_view);
+        recycleView.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL_LIST));
 
         recycleView.setLayoutManager(new LinearLayoutManager(this));
         recycleView.setAdapter(usersAdapter);
 
-        if (postsDownloaded == null) {
-            downloadData();
+        settings = getSharedPreferences(Model.SHARED_PREF, MODE_PRIVATE);
+        String nicknameSavedValue = settings.getString("nickname", "");
+        String repositorySavedValue = settings.getString("repository", "");
+
+        nickname.setText(nicknameSavedValue);
+        repository.setText(repositorySavedValue);
+    }
+
+    public void setBusy(boolean isBusy) {
+        if (layContent == null || busyId == null){
+            return;
+        }
+        if (isBusy) {
+            layContent.setVisibility(View.GONE);
+            busyId.setVisibility(View.VISIBLE);
+        } else {
+            layContent.setVisibility(View.VISIBLE);
+            busyId.setVisibility(View.GONE);
         }
     }
 
@@ -94,7 +136,6 @@ public class MainActivity extends Activity {
     public boolean onCreateOptionsMenu(final Menu menu) {
         final MenuInflater menuInflater = getMenuInflater();
         menuInflater.inflate(R.menu.menu_main, menu);
-
         return true;
     }
 
@@ -106,14 +147,25 @@ public class MainActivity extends Activity {
         return super.onOptionsItemSelected(item);
     }
 
+    private void savePreferences(){
+        SharedPreferences.Editor edit = settings.edit();
+        edit.putString("nickname", nickname.getText().toString());
+        edit.putString("repository", repository.getText().toString());
+        edit.apply();
+    }
+
     private void downloadData() {
         if (nickname.getText().equals("") || repository.getText().equals("")){
             return;
         }
+        setBusy(true);
+
+        savePreferences();
+
         DataInterface service = retrofit.create(DataInterface.class);
         Observable<List<User>> postsObservable = service.getStargazers(nickname.getText().toString(), repository.getText().toString());
 
-        Log.d(TAG, "Downloading data...");
+        Log.d(TAG, "Downloading data for nickname: " + nickname.getText() + ", repository: " + repository.getText() + "...");
 
         postsObservable.subscribeOn(Schedulers.newThread())
             .observeOn(AndroidSchedulers.mainThread())
@@ -121,13 +173,17 @@ public class MainActivity extends Activity {
 
                @Override
                public void onCompleted() {
+                   Log.d(TAG, "Download completed");
                    Toast.makeText(MainActivity.this, R.string.download_done, Toast.LENGTH_SHORT).show();
+                   setBusy(false);
                }
 
                @Override
                public void onError(Throwable e) {
+                   Toast.makeText(MainActivity.this, R.string.error_downloading, Toast.LENGTH_SHORT).show();
                    e.printStackTrace();
                    refreshLayout.setRefreshing(false);
+                   setBusy(false);
                }
 
                @Override
@@ -138,55 +194,19 @@ public class MainActivity extends Activity {
                    }
 
                    realm.beginTransaction();
-                   if (postsDownloaded == null) {
+                   if (usersDownloaded == null) {
                        realm.where(User.class).findAll().deleteAllFromRealm();
                    } else {
-                       postsDownloaded.deleteAllFromRealm();
+                       usersDownloaded.deleteAllFromRealm();
                    }
                    realm.copyToRealm(users);
                    realm.commitTransaction();
 
-                   postsDownloaded = realm.where(User.class).findAll();
+                   usersDownloaded = realm.where(User.class).findAll();
                    refreshLayout.setRefreshing(false);
+                   usersAdapter.setNewUsersDownloaded(usersDownloaded);
                    usersAdapter.notifyDataSetChanged();
                }
            });
-    }
-
-    public static class PostViewHolder extends RecyclerView.ViewHolder {
-        @BindView(R.id.user_id) TextView userId;
-        @BindView(R.id.user_name) TextView userName;
-        @BindView(R.id.user_avatar) ImageView userAvatar;
-
-        public PostViewHolder(View view) {
-            super(view);
-            ButterKnife.bind(this, view);
-        }
-    }
-
-    private class UsersAdapter extends RecyclerView.Adapter {
-
-        @Override
-        public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.element_user, parent, false);
-            return new PostViewHolder(view);
-        }
-
-        @Override
-        public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
-            PostViewHolder myHolder = (PostViewHolder) holder;
-            User user = postsDownloaded.get(position);
-            myHolder.userId.setText(user.getId());
-            myHolder.userName.setText(user.getLogin());
-            Ion.with(getApplicationContext())
-                    .load(user.getAvatarUrl())
-                    .setTimeout(1000)
-                    .intoImageView(myHolder.userAvatar);
-        }
-
-        @Override
-        public int getItemCount() {
-            return postsDownloaded == null ? 0 : postsDownloaded.size();
-        }
     }
 }

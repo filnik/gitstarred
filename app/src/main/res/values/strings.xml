@@ -6,4 +6,6 @@
     <string name="repository">Repository</string>
     <string name="download_done">Download done</string>
     <string name="avatar">User avatar</string>
+    <string name="error_downloading">Error downloading...</string>
+    <string name="go">GO</string>
 </resources>

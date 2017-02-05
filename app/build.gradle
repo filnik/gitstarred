@@ -42,4 +42,6 @@ dependencies {
     apt 'com.jakewharton:butterknife-compiler:8.5.1'
 
     compile 'com.koushikdutta.ion:ion:2.+'
+
+    compile 'com.mobsandgeeks:android-saripaar:+'
 }
