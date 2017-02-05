@@ -1,6 +1,7 @@
 package filnik.stargazers;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
@@ -11,12 +12,16 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.dinuscxj.refresh.RecyclerRefreshLayout;
+import com.mobsandgeeks.saripaar.QuickRule;
+import com.mobsandgeeks.saripaar.Rule;
+import com.mobsandgeeks.saripaar.ValidationError;
 import com.mobsandgeeks.saripaar.Validator;
 
 import java.util.List;
@@ -40,8 +45,8 @@ import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
 
 public class MainActivity extends Activity {
-    @BindView(R.id.nickname) TextView nickname;
-    @BindView(R.id.repository) TextView repository;
+    @BindView(R.id.nickname) EditText nickname;
+    @BindView(R.id.repository) EditText repository;
     @BindView(R.id.download_button) Button downloadButton;
     @BindView(R.id.refresh_layout) RecyclerRefreshLayout refreshLayout;
     @BindView(R.id.idLayContent) LinearLayout layContent;
@@ -70,10 +75,7 @@ public class MainActivity extends Activity {
 
         setupRealm();
         bindView();
-
-        if (usersDownloaded == null) {
-            downloadData();
-        }
+        setupValidator();
     }
 
     private void setupRealm(){
@@ -87,6 +89,52 @@ public class MainActivity extends Activity {
             usersDownloaded = realm.where(User.class).findAll();
             Log.d(TAG, "Using cached data...");
         }
+    }
+
+    private void setupValidator(){
+
+        validator.setValidationListener(new Validator.ValidationListener() {
+
+            @Override
+            public void onValidationSucceeded() {
+                downloadDataInternal();
+            }
+
+            @Override
+            public void onValidationFailed(List<ValidationError> errors) {
+                for (ValidationError error : errors){
+                    for (Rule rule : error.getFailedRules()){
+                        Toast.makeText(MainActivity.this, rule.getMessage(MainActivity.this), Toast.LENGTH_SHORT).show();
+                    }
+                }
+            }
+        });
+
+        validator.put(nickname, new QuickRule<EditText>() {
+
+            @Override
+            public boolean isValid(EditText editText) {
+                return !editText.getText().toString().equals("") && !editText.getText().toString().matches("\\W");
+            }
+
+            @Override
+            public String getMessage(Context context) {
+                return getString(R.string.nickname_empty);
+            }
+        });
+
+        validator.put(repository, new QuickRule<EditText>() {
+
+            @Override
+            public boolean isValid(EditText editText) {
+                return !editText.getText().toString().equals("") && !editText.getText().toString().matches("\\W");
+            }
+
+            @Override
+            public String getMessage(Context context) {
+                return getString(R.string.repository_empty);
+            }
+        });
     }
 
     private void bindView(){
@@ -155,12 +203,18 @@ public class MainActivity extends Activity {
     }
 
     private void downloadData() {
-        if (nickname.getText().equals("") || repository.getText().equals("")){
+        try {
+            validator.validate();
+        } catch (java.lang.IllegalStateException e) {
+            Log.e("ERROR", e.toString());
+        }
+    }
+
+    private void downloadDataInternal() {
+        if (nickname.getText().toString().equals("") || repository.getText().toString().equals("")){
             return;
         }
         setBusy(true);
-
-        savePreferences();
 
         DataInterface service = retrofit.create(DataInterface.class);
         Observable<List<User>> postsObservable = service.getStargazers(nickname.getText().toString(), repository.getText().toString());
@@ -175,6 +229,7 @@ public class MainActivity extends Activity {
                public void onCompleted() {
                    Log.d(TAG, "Download completed");
                    Toast.makeText(MainActivity.this, R.string.download_done, Toast.LENGTH_SHORT).show();
+                   savePreferences();
                    setBusy(false);
                }
 

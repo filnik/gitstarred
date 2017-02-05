@@ -8,4 +8,6 @@
     <string name="avatar">User avatar</string>
     <string name="error_downloading">Error downloading...</string>
     <string name="go">GO</string>
+    <string name="nickname_empty">Nickname given is not valid</string>
+    <string name="repository_empty">Repository given is not valid</string>
 </resources>
