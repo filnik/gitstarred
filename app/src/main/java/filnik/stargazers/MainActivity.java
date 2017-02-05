@@ -15,7 +15,6 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.dinuscxj.refresh.RecyclerRefreshLayout;
@@ -61,6 +60,7 @@ public class MainActivity extends Activity {
     private SharedPreferences settings;
 
     protected Validator validator = new Validator(this);
+    private boolean isRefreshing = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -93,9 +93,7 @@ public class MainActivity extends Activity {
     }
 
     private void setupValidator(){
-
         validator.setValidationListener(new Validator.ValidationListener() {
-
             @Override
             public void onValidationSucceeded() {
                 downloadDataInternal();
@@ -143,7 +141,9 @@ public class MainActivity extends Activity {
         refreshLayout.setOnRefreshListener(new RecyclerRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
+                isRefreshing = true;
                 downloadData();
+                isRefreshing = false;
             }
         });
 
@@ -215,7 +215,7 @@ public class MainActivity extends Activity {
         if (nickname.getText().toString().equals("") || repository.getText().toString().equals("")){
             return;
         }
-        setBusy(true);
+        setBusy(!isRefreshing);
 
         DataInterface service = retrofit.create(DataInterface.class);
         Observable<List<User>> postsObservable = service.getStargazers(nickname.getText().toString(), repository.getText().toString());
