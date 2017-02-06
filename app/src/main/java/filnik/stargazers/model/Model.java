@@ -6,6 +6,5 @@ package filnik.stargazers.model;
 
 public class Model {
     public final static String GITHUB_REPO_URL = "https://api.github.com/";
-
     public final static String SHARED_PREF = "stargazers";
 }

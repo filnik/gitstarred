@@ -9,7 +9,6 @@ import io.realm.annotations.PrimaryKey;
 
 public class User extends RealmObject {
     /*
-    [
   {
     "login": "navaneet",
     "id": 2356187,
@@ -39,11 +38,9 @@ public class User extends RealmObject {
     public String getId() {
         return id;
     }
-
     public String getLogin() {
         return login;
     }
-
     public String getAvatarUrl() {
         return avatar_url;
     }
