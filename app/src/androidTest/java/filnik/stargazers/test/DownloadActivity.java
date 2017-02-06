@@ -12,11 +12,12 @@ public abstract class DownloadActivity extends BaseTestActivity {
     @Override
     public void setUp() throws Exception {
         super.setUp();
+        assertTrue("wrong Activity", solo.waitForActivity(MainActivity.class, 2000));
+        setWifiEnable(isOnline());
+        // assuming mobile data is already disabled (otherwise we need to use sudo)
     }
 
     public void testRun() {
-        assertTrue("wrong Activity", solo.waitForActivity(MainActivity.class, 2000));
-        setWifiEnable(isOnline());
         solo.waitForLogMessage("setWifiEnabled: " + (isOnline() ? "true" : "false"));
         solo.clearEditText((android.widget.EditText) solo.getView(filnik.stargazers.R.id.nickname));
         solo.enterText((android.widget.EditText) solo.getView(filnik.stargazers.R.id.nickname), "filnik");
